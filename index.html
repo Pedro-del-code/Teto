@@ -553,6 +553,13 @@ async function enviarMensagem(texto) {
       const audio = new Audio(audio_url)
       audioAtual = audio
 
+      function restaurarBtnMic() {
+        elBtnMic.textContent = '🎤  FALAR'
+        elBtnMic.style.background = ''
+        elBtnMic.disabled = false
+        elBtnMic.onclick = () => toggleMic()
+      }
+
       audio.onplay  = () => animarBoca(audio)
       audio.onended = () => {
         audioAtual = null
@@ -560,18 +567,27 @@ async function enviarMensagem(texto) {
         setAvatar('fechada')
         elWrap.classList.remove('falando')
         elStatus.textContent = 'Toque no botão e fale ♪'
-        elBtnMic.disabled = false
+        restaurarBtnMic()
       }
       audio.onerror = () => {
         elStatus.textContent = 'Toque no botão e fale ♪'
-        elBtnMic.disabled = false
         setAvatar('fechada')
+        restaurarBtnMic()
       }
 
       audio.play().catch(() => {
-        // Autoplay bloqueado — mostra botão para o usuário tocar
+        // Autoplay bloqueado pelo mobile — transforma btn em botão de play
         elStatus.textContent = '▶ Toque para ouvir a Teto'
         elBtnMic.disabled = false
+        elBtnMic.textContent = '▶  OUVIR'
+        elBtnMic.style.background = 'var(--purple)'
+        elBtnMic.onclick = () => {
+          audio.play()
+          elStatus.textContent = 'Falando... 🎵'
+          elBtnMic.textContent = '🎤  FALAR'
+          elBtnMic.style.background = ''
+          elBtnMic.onclick = () => toggleMic()
+        }
       })
 
     } else {
