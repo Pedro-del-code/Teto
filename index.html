@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <meta name="theme-color" content="#0d0010"/>
+  <title>★ Teto</title>
+  <style>
+    /* ══════════════════════════════════════
+       RESET & BASE
+    ══════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0010;
+      --card:     #1a0020;
+      --red:      #cc2244;
+      --red2:     #ff4466;
+      --purple:   #8800cc;
+      --purple2:  #aa44ff;
+      --text:     #f0e6ff;
+      --user:     #ff6688;
+      --teto:     #cc88ff;
+      --muted:    #554466;
+      --radius:   18px;
+    }
+
+    html, body {
+      height: 100%;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Courier New', monospace;
+      overflow: hidden;
+    }
+
+    /* ══════════════════════════════════════
+       LAYOUT PRINCIPAL
+    ══════════════════════════════════════ */
+    #app {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Cabeçalho ── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--card);
+      border-bottom: 1px solid #330044;
+      flex-shrink: 0;
+    }
+
+    header h1 {
+      font-size: 1.3rem;
+      color: var(--red);
+      letter-spacing: 4px;
+    }
+
+    header span {
+      font-size: 0.75rem;
+      color: var(--purple2);
+      letter-spacing: 2px;
+    }
+
+    /* ── Avatar ── */
+    #avatar-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px 0 8px;
+      flex-shrink: 0;
+    }
+
+    #avatar-wrap {
+      position: relative;
+      width: 200px;
+      height: 200px;
+    }
+
+    #avatar-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      background: conic-gradient(var(--red), var(--purple), var(--red));
+      animation: spin 4s linear infinite;
+      opacity: 0;
+      transition: opacity 0.4s;
+    }
+
+    #avatar-wrap.falando::before { opacity: 1; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    #avatar-wrap::after {
+      content: '';
+      position: absolute;
+      inset: -3px;
+      border-radius: 50%;
+      background: var(--bg);
+    }
+
+    #avatar {
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center top;
+      position: relative;
+      z-index: 1;
+      transition: opacity 0.08s;
+    }
+
+    #status {
+      margin-top: 10px;
+      font-size: 0.85rem;
+      color: #ffaa44;
+      letter-spacing: 1px;
+      min-height: 1.2em;
+    }
+
+    /* ── Chat ── */
+    #chat {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--purple) transparent;
+    }
+
+    .msg {
+      display: flex;
+      flex-direction: column;
+      max-width: 85%;
+      animation: fadeUp 0.2s ease;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .msg.user  { align-self: flex-end; align-items: flex-end; }
+    .msg.teto  { align-self: flex-start; align-items: flex-start; }
+
+    .msg-label {
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      margin-bottom: 3px;
+      opacity: 0.7;
+    }
+
+    .msg.user  .msg-label { color: var(--user); }
+    .msg.teto  .msg-label { color: var(--teto); }
+
+    .msg-bubble {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+
+    .msg.user .msg-bubble {
+      background: #3a0033;
+      border-bottom-right-radius: 4px;
+      color: var(--text);
+    }
+
+    .msg.teto .msg-bubble {
+      background: #1e0035;
+      border-bottom-left-radius: 4px;
+      color: var(--text);
+    }
+
+    /* ── Controles ── */
+    #controls {
+      padding: 12px 16px 20px;
+      display: flex;
+      gap: 10px;
+      flex-shrink: 0;
+      background: linear-gradient(transparent, var(--bg) 40%);
+    }
+
+    #btn-mic {
+      flex: 1;
+      height: 60px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--red);
+      color: white;
+      font-family: 'Courier New', monospace;
+      font-size: 1.1rem;
+      font-weight: bold;
+      letter-spacing: 2px;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #btn-mic:active { transform: scale(0.97); }
+
+    #btn-mic.ouvindo {
+      background: var(--purple);
+      animation: pulse 1s infinite;
+    }
+
+    #btn-mic:disabled {
+      background: #330033;
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(136,0,204,0.5); }
+      50%       { box-shadow: 0 0 0 12px rgba(136,0,204,0); }
+    }
+
+    #btn-limpar {
+      width: 60px;
+      height: 60px;
+      border: none;
+      border-radius: var(--radius);
+      background: var(--card);
+      color: var(--text);
+      font-size: 1.3rem;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      transition: background 0.2s;
+    }
+
+    #btn-limpar:active { background: #2a0040; }
+
+    /* ── Loading dots ── */
+    .dots::after {
+      content: '';
+      animation: dots 1.2s infinite;
+    }
+    @keyframes dots {
+      0%   { content: '.'; }
+      33%  { content: '..'; }
+      66%  { content: '...'; }
+    }
+
+    /* ── Aviso HTTPS ── */
+    #aviso-https {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+
+    #aviso-https div {
+      background: var(--card);
+      border: 1px solid var(--red);
+      border-radius: var(--radius);
+      padding: 28px;
+      text-align: center;
+      max-width: 320px;
+    }
+
+    #aviso-https h2 { color: var(--red); margin-bottom: 12px; }
+    #aviso-https p  { color: var(--text); font-size: 0.9rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+
+<!-- Aviso se não for HTTPS -->
+<div id="aviso-https" style="display:none">
+  <div>
+    <h2>⚠️ HTTPS necessário</h2>
+    <p>O microfone só funciona em conexões seguras (HTTPS).<br><br>
+    Acesse pelo link do Render ou use localhost.</p>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- Cabeçalho -->
+  <header>
+    <h1>★ TETO ★</h1>
+    <span>VOCALOID</span>
+  </header>
+
+  <!-- Avatar -->
+  <div id="avatar-area">
+    <div id="avatar-wrap">
+      <img id="avatar" src="/assets/avatar/boca_fechada.png" alt="Teto"/>
+    </div>
+    <div id="status">Toque no botão e fale ♪</div>
+  </div>
+
+  <!-- Chat -->
+  <div id="chat"></div>
+
+  <!-- Controles -->
+  <div id="controls">
+    <button id="btn-mic" onclick="toggleMic()">🎤  FALAR</button>
+    <button id="btn-limpar" onclick="limparChat()" title="Limpar">🗑</button>
+  </div>
+
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// CONFIGURAÇÃO
+// ══════════════════════════════════════════════
+const SESSION_ID = 'teto_' + Math.random().toString(36).slice(2, 9)
+
+const AVATARES = {
+  fechada: '/assets/avatar/boca_fechada.png',
+  meio:    '/assets/avatar/boca_meio.png',
+  aberta:  '/assets/avatar/boca_aberta.png',
+  oculos:  '/assets/avatar/oculos.png',
+  braco:   '/assets/avatar/braco_cruzado.png',
+}
+
+// ══════════════════════════════════════════════
+// ESTADO
+// ══════════════════════════════════════════════
+let reconhecendo   = false
+let audioAtual     = null
+let animFrame      = null
+let avatarAtual    = 'fechada'
+
+// ══════════════════════════════════════════════
+// ELEMENTOS
+// ══════════════════════════════════════════════
+const elAvatar  = document.getElementById('avatar')
+const elWrap    = document.getElementById('avatar-wrap')
+const elStatus  = document.getElementById('status')
+const elChat    = document.getElementById('chat')
+const elBtnMic  = document.getElementById('btn-mic')
+
+// ══════════════════════════════════════════════
+// CHECAGEM HTTPS
+// ══════════════════════════════════════════════
+if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+  document.getElementById('aviso-https').style.display = 'flex'
+}
+
+// ══════════════════════════════════════════════
+// AVATAR
+// ══════════════════════════════════════════════
+function setAvatar(nome) {
+  if (nome === avatarAtual) return
+  avatarAtual = nome
+  elAvatar.style.opacity = '0.6'
+  setTimeout(() => {
+    elAvatar.src = AVATARES[nome]
+    elAvatar.style.opacity = '1'
+  }, 60)
+}
+
+function animarBoca(audio) {
+  // Usa Web Audio API para detectar volume e animar a boca
+  const ctx     = new AudioContext()
+  const src     = ctx.createMediaElementSource(audio)
+  const analyser = ctx.createAnalyser()
+  analyser.fftSize = 256
+  src.connect(analyser)
+  analyser.connect(ctx.destination)
+
+  const buf = new Uint8Array(analyser.frequencyBinCount)
+
+  elWrap.classList.add('falando')
+
+  function loop() {
+    if (!audioAtual || audio.ended || audio.paused) {
+      setAvatar('fechada')
+      elWrap.classList.remove('falando')
+      return
+    }
+    analyser.getByteFrequencyData(buf)
+    const vol = buf.reduce((a, b) => a + b, 0) / buf.length
+
+    if      (vol > 30) setAvatar('aberta')
+    else if (vol > 10) setAvatar('meio')
+    else               setAvatar('fechada')
+
+    animFrame = requestAnimationFrame(loop)
+  }
+  loop()
+}
+
+// ══════════════════════════════════════════════
+// CHAT
+// ══════════════════════════════════════════════
+function addMsg(quem, texto) {
+  const div = document.createElement('div')
+  div.className = `msg ${quem}`
+
+  const label  = document.createElement('div')
+  label.className = 'msg-label'
+  label.textContent = quem === 'user' ? '🎤 Você' : '★ Teto'
+
+  const bubble = document.createElement('div')
+  bubble.className = 'msg-bubble'
+  bubble.textContent = texto
+
+  div.appendChild(label)
+  div.appendChild(bubble)
+  elChat.appendChild(div)
+  elChat.scrollTop = elChat.scrollHeight
+  return div
+}
+
+function addThinking() {
+  const div = document.createElement('div')
+  div.className = 'msg teto'
+  div.id = 'thinking'
+
+  const label = document.createElement('div')
+  label.className = 'msg-label'
+  label.textContent = '★ Teto'
+
+  const bubble = document.createElement('div')
+  bubble.className = 'msg-bubble dots'
+
+  div.appendChild(label)
+  div.appendChild(bubble)
+  elChat.appendChild(div)
+  elChat.scrollTop = elChat.scrollHeight
+}
+
+function removeThinking() {
+  document.getElementById('thinking')?.remove()
+}
+
+function limparChat() {
+  elChat.innerHTML = ''
+  fetch(`/session/${SESSION_ID}`, { method: 'DELETE' })
+}
+
+// ══════════════════════════════════════════════
+// RECONHECIMENTO DE VOZ (Web Speech API)
+// ══════════════════════════════════════════════
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition
+
+if (!SpeechRec) {
+  elStatus.textContent = '⚠️ Navegador não suporta microfone'
+  elBtnMic.disabled = true
+}
+
+let rec = null
+
+function toggleMic() {
+  if (reconhecendo) {
+    pararMic()
+  } else {
+    iniciarMic()
+  }
+}
+
+function iniciarMic() {
+  // Para qualquer áudio tocando
+  if (audioAtual) {
+    audioAtual.pause()
+    audioAtual = null
+    cancelAnimationFrame(animFrame)
+    setAvatar('fechada')
+    elWrap.classList.remove('falando')
+  }
+
+  rec = new SpeechRec()
+  rec.lang = 'pt-BR'
+  rec.interimResults = false
+  rec.maxAlternatives = 1
+
+  rec.onstart = () => {
+    reconhecendo = true
+    elBtnMic.textContent = '⏹  PARAR'
+    elBtnMic.classList.add('ouvindo')
+    elStatus.textContent = 'Ouvindo... 🎤'
+    setAvatar('fechada')
+  }
+
+  rec.onresult = async (e) => {
+    const texto = e.results[0][0].transcript.trim()
+    pararMic()
+    await enviarMensagem(texto)
+  }
+
+  rec.onerror = (e) => {
+    console.error('[STT]', e.error)
+    pararMic()
+    if (e.error === 'not-allowed') {
+      elStatus.textContent = '⚠️ Permita o microfone'
+    } else if (e.error === 'no-speech') {
+      elStatus.textContent = 'Nada ouvido, tente novamente'
+    } else {
+      elStatus.textContent = 'Erro no microfone'
+    }
+    setAvatar('braco')
+    setTimeout(() => {
+      elStatus.textContent = 'Toque no botão e fale ♪'
+      setAvatar('fechada')
+    }, 2500)
+  }
+
+  rec.onend = () => {
+    if (reconhecendo) pararMic()
+  }
+
+  rec.start()
+}
+
+function pararMic() {
+  reconhecendo = false
+  elBtnMic.textContent = '🎤  FALAR'
+  elBtnMic.classList.remove('ouvindo')
+  try { rec?.stop() } catch(e) {}
+}
+
+// ══════════════════════════════════════════════
+// COMUNICAÇÃO COM BACKEND
+// ══════════════════════════════════════════════
+async function enviarMensagem(texto) {
+  addMsg('user', texto)
+  addThinking()
+  elBtnMic.disabled = true
+  elStatus.textContent = 'Pensando... 🧠'
+  setAvatar('oculos')
+
+  try {
+    const res = await fetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ texto, session_id: SESSION_ID }),
+    })
+
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const { resposta, audio_url } = await res.json()
+
+    removeThinking()
+    addMsg('teto', resposta)
+
+    // ── Toca o áudio da resposta ──
+    if (audio_url) {
+      elStatus.textContent = 'Falando... 🎵'
+      const audio = new Audio(audio_url)
+      audioAtual = audio
+
+      audio.onplay  = () => animarBoca(audio)
+      audio.onended = () => {
+        audioAtual = null
+        cancelAnimationFrame(animFrame)
+        setAvatar('fechada')
+        elWrap.classList.remove('falando')
+        elStatus.textContent = 'Toque no botão e fale ♪'
+        elBtnMic.disabled = false
+      }
+      audio.onerror = () => {
+        elStatus.textContent = 'Toque no botão e fale ♪'
+        elBtnMic.disabled = false
+        setAvatar('fechada')
+      }
+
+      audio.play().catch(() => {
+        // Autoplay bloqueado — mostra botão para o usuário tocar
+        elStatus.textContent = '▶ Toque para ouvir a Teto'
+        elBtnMic.disabled = false
+      })
+
+    } else {
+      elStatus.textContent = 'Toque no botão e fale ♪'
+      elBtnMic.disabled = false
+      setAvatar('fechada')
+    }
+
+  } catch (err) {
+    console.error(err)
+    removeThinking()
+    addMsg('teto', 'Ah, algo deu errado... que chato! >_<')
+    setAvatar('braco')
+    elStatus.textContent = 'Erro de conexão'
+    elBtnMic.disabled = false
+    setTimeout(() => {
+      setAvatar('fechada')
+      elStatus.textContent = 'Toque no botão e fale ♪'
+    }, 3000)
+  }
+}
+</script>
+</body>
+</html>
