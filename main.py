@@ -17,7 +17,7 @@ from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-import edge_tts
+from fishaudio import AsyncFishAudio
 from groq import Groq
 from dotenv import load_dotenv
 
@@ -30,10 +30,9 @@ GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 if not GROQ_API_KEY:
     raise RuntimeError("GROQ_API_KEY não encontrada nas variáveis de ambiente")
 
-GROQ_MODEL     = "llama-3.3-70b-versatile"
-VOZ_EDGE       = "pt-BR-FranciscaNeural"
-VOZ_VELOCIDADE = "+10%"
-VOZ_PITCH      = "+5Hz"
+GROQ_MODEL      = "llama-3.3-70b-versatile"
+FISH_API_KEY    = os.getenv("FISH_API_KEY")
+TETO_VOICE_ID   = "78fd23c95bc1465ea6bb421530f49afa"  # Kasane Teto — Fish Audio
 
 SYSTEM_PROMPT = """Você é a Teto Kasane, uma vocaloid animada, enérgica e um pouco dramática.
 Fale em português do Brasil com entusiasmo. Seja divertida, prestativa e breve —
@@ -120,19 +119,19 @@ async def chat(req: MensagemRequest):
 
     hist.append({"role": "assistant", "content": resposta})
 
-    # ── Gera áudio com Edge TTS ──
+    # ── Gera áudio com Fish Audio (voz da Kasane Teto) ──
     try:
+        fish = AsyncFishAudio(api_key=FISH_API_KEY)
         tmp = tempfile.NamedTemporaryFile(
             suffix=".mp3", delete=False, dir="static_audio", prefix="teto_"
         )
         tmp.close()
-        tts = edge_tts.Communicate(
-            resposta,
-            voice=VOZ_EDGE,
-            rate=VOZ_VELOCIDADE,
-            pitch=VOZ_PITCH,
+        audio_bytes = await fish.tts.convert(
+            text=resposta,
+            reference_id=TETO_VOICE_ID,
         )
-        await tts.save(tmp.name)
+        with open(tmp.name, "wb") as f:
+            f.write(audio_bytes)
         audio_url = f"/audio/{os.path.basename(tmp.name)}"
     except Exception as e:
         # Se TTS falhar, retorna só o texto sem áudio
